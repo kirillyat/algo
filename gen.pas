@@ -22,8 +22,7 @@ type
 
 var
     pop: population;
-    Rez: ArrF;
-    T, Y: integer;
+    mx: real;
 
 
 function F(x: real): real;
@@ -35,7 +34,6 @@ end;
 procedure dec2bin(x: real; var a: individ);
 var i: integer;
 begin
-
     case trunc(x) of
         1: begin a[1] := 0; a[2] := 1; end;
         2: begin a[1] := 1; a[2] := 0; end;
@@ -48,10 +46,12 @@ begin
     end;
 end;
 
+
 function rand(x: real): boolean;
 begin
   if x=0 then rand:=false else rand := random(maxint)/maxint < x;
 end;
+
 
 function pow(a : real; b : integer): real;
 var p : real;
@@ -66,7 +66,6 @@ begin
         end
     else pow := 1/pow(a, -b);
 end;
-
 
 
 function bin2dec(a: individ): real;
@@ -115,9 +114,6 @@ begin
         if F(bin2dec(pop[i])) < F(bin2dec(newpop[i])) then
             for l := 1 to n do
                 pop[i][l] := newpop[i][l];
-
-
-
 end;
 
 
@@ -129,19 +125,18 @@ begin
     for i:=1 to n do begin
         randomize;
         k := random(n-1);
-        if rand(v1) then
-        for j:= k to ((n+k) div 2) do begin
-            c := pop[i][j];
-            pop[i][j] := pop[i][n - j];
-            pop[i][ n - j] := c;
-
+        if rand(i/n) then
+          for j:= k to ((n+k) div 2) do begin
+              c := pop[i][j];
+              pop[i][j] := pop[i][n - j + k];
+              pop[i][ n - j + k] := c;
         end;
     end;
 end;
 
 
 
-procedure Selection(var pop: population);
+procedure selection(var pop: population);
 var
     i, j, s, l: integer;
 
@@ -174,24 +169,25 @@ end;
 
 
 
-procedure Loop (var pop : population; var Rez : ArrF);
-var i, w: integer;
+procedure loop (var pop : population; var mx : real);
+var i, j, w: integer;
 begin
-    {for i:=1 to 100 do begin это по количеству итераций болшая погрешность}
-    {Это выполнение до априорно заданного значения(намного дольше часто виснет)}
-    w:=1;
-    for i := 2 to n do
-        if F(bin2dec(pop[i]))>F(bin2dec(pop[w])) then
-            w:=i;
-    while F(bin2dec(pop[w]))<= 1.6 do begin
-        for i := 1 to n do
-          if F(bin2dec(pop[i]))>F(bin2dec(pop[w])) then
-              w:=i;
-
-        Selection(pop);
+    for i:=1 to 100 do begin {это по количеству итераций болшая погрешность}
+        selection(pop);
         cross(pop);
         mutation(pop);
+        w:=1;
+        for j:=1 to n do
+          if F(bin2dec(pop[j]))>F(bin2dec(pop[w])) then
+              w:=j;
 
+        if F(bin2dec(pop[w]))>F(mx) then
+            mx := bin2dec(pop[w]);
+
+    end;
+    if F(mx) < 1.6 then begin
+      INIT(pop);
+      loop(pop, mx);
     end;
 end;
 
@@ -204,26 +200,21 @@ end;
 
 
 begin
-    {ответ по WolframAlpfa
-    0.779822;
-    writeln('==========================');
-    writeln('Maximum по WolframAlpfa  :  ');
-    writeln('x = ',ansX:5:5);
-    writeln('y = ',f(ansX):5:5);
-    writeln('==========================');}
+
+    {
+      Ответ
+      x:= 0.779822;
+      y:= 1.605418;
+    }
+
     randomize;
 
     INIT(pop);
 
+    mx := bin2dec(pop[1]);
 
-    Loop(pop, Rez);
-    T := 1;
-    for Y := 2 to n do
-        if F(bin2dec(pop[Y]))>F(bin2dec(pop[T])) then
-            T:=Y;
-
-    writeln('x=',bin2dec(pop[T]):3:3,' y=',f(bin2dec(pop[T])):3:3);
-
+    loop(pop, mx);
+    writeln('x=', mx:3:6,' y=',F(mx):3:6);
 
 
 
